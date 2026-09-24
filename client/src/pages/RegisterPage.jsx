@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Award, Mail, Lock, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Award, User, Mail, Lock, Tag, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 
-export default function LoginPage() {
-  const { login } = useAuth();
+export default function RegisterPage() {
+  const { register } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    panelLabel: '',
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -18,16 +22,11 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const user = await login(formData);
-      if (user.activeEventId) {
-        const from = location.state?.from?.pathname || '/';
-        navigate(from, { replace: true });
-      } else {
-        navigate('/event-setup', { replace: true });
-      }
+      await register(formData);
+      navigate('/event-setup', { replace: true });
     } catch (err) {
       setError(
-        err.response?.data?.message || 'Login failed. Please check your credentials.'
+        err.response?.data?.message || 'Registration failed. Please check your details.'
       );
     } finally {
       setLoading(false);
@@ -42,10 +41,10 @@ export default function LoginPage() {
             <Award className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-            Expo<span className="text-indigo-600">Judge</span>
+            Join as a Judge
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Sign in to start evaluating projects and teams
+            Self-register to evaluate projects and coordinate with organizers
           </p>
         </div>
 
@@ -58,8 +57,26 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1" htmlFor="name">
+              Full Name *
+            </label>
+            <div className="relative">
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                id="name"
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Dr. Jane Doe"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-sm min-h-[44px]"
+              />
+            </div>
+          </div>
+
+          <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1" htmlFor="email">
-              Email Address
+              Email Address *
             </label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -70,7 +87,7 @@ export default function LoginPage() {
                 inputMode="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="judge@expojudge.com"
+                placeholder="jane.doe@university.edu"
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-sm min-h-[44px]"
               />
             </div>
@@ -78,7 +95,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1" htmlFor="password">
-              Password
+              Password *
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -86,9 +103,27 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 required
+                minLength={6}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="••••••••"
+                placeholder="At least 6 characters"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-sm min-h-[44px]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1" htmlFor="panelLabel">
+              Optional Panel / Track Label
+            </label>
+            <div className="relative">
+              <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                id="panelLabel"
+                type="text"
+                value={formData.panelLabel}
+                onChange={(e) => setFormData({ ...formData, panelLabel: e.target.value })}
+                placeholder="e.g. Panel B - Software, or Hardware Track"
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-sm min-h-[44px]"
               />
             </div>
@@ -102,12 +137,12 @@ export default function LoginPage() {
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Signing in...
+                Registering...
               </>
             ) : (
               <>
-                Sign In
-                <ArrowRight className="w-4 h-4" />
+                Create Account &amp; Setup Event
+                <ArrowRight className="w-5 h-5" />
               </>
             )}
           </button>
@@ -115,12 +150,12 @@ export default function LoginPage() {
 
         <div className="pt-4 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-500">
-            Don't have an account?{' '}
+            Already registered?{' '}
             <Link
-              to="/register"
+              to="/login"
               className="text-indigo-600 hover:text-indigo-800 font-bold underline underline-offset-4"
             >
-              Self-Register as Judge
+              Sign In
             </Link>
           </p>
         </div>

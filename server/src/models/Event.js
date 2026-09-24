@@ -61,9 +61,9 @@ export const DEFAULT_CRITERIA = [
 
 const criterionSchema = new mongoose.Schema(
   {
-    id: { type: String, default: '' },
+    id: { type: String, required: true },
     name: { type: String, required: true },
-    maxMarks: { type: Number, required: true },
+    maxMarks: { type: Number, required: true, min: 1 },
     order: { type: Number, default: 0 },
     description: { type: String, default: '' },
   },
@@ -77,14 +77,38 @@ const eventSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    collegeName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     date: {
       type: Date,
       default: Date.now,
     },
     criteria: {
       type: [criterionSchema],
-      default: DEFAULT_CRITERIA,
+      default: () => DEFAULT_CRITERIA,
     },
+    joinCode: {
+      type: String,
+      required: true,
+      unique: true,
+      uppercase: true,
+      trim: true,
+    },
+    organizerIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    judgeIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,
@@ -94,5 +118,15 @@ const eventSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Helper for generating unambiguous 6-character join code
+export function generateJoinCode() {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
 
 export const Event = mongoose.model('Event', eventSchema);

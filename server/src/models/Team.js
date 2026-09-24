@@ -62,6 +62,8 @@ const teamSchema = new mongoose.Schema(
   }
 );
 
+teamSchema.index({ eventId: 1, teamNameNormalized: 1 });
+
 teamSchema.pre('validate', function () {
   if (this.teamName) {
     this.teamNameNormalized = normalizeTeamName(this.teamName);

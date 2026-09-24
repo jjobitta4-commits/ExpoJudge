@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
+import { Event } from '../models/Event.js';
 
 export const JWT_SECRET = process.env.JWT_SECRET || 'expojudge_secure_jwt_secret_key_2026';
 
@@ -25,12 +26,48 @@ export async function verifyToken(req, res, next) {
   }
 }
 
-export function requireAdmin(req, res, next) {
-  if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Access denied. Administrator role required.' });
+export async function requireAdmin(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Authentication required.' });
   }
-  next();
+
+  // Global super-admin check
+  if (req.user.role === 'admin') {
+    return next();
+  }
+
+  // Per-event authority check
+  const eventId =
+    req.params.eventId ||
+    req.params.id ||
+    req.query.eventId ||
+    req.body.eventId ||
+    req.user.activeEventId;
+
+  if (eventId) {
+    try {
+      const event = await Event.findById(eventId);
+      if (
+        event &&
+        ((event.organizerIds &&
+          event.organizerIds.some((id) => id.toString() === req.user._id.toString())) ||
+         (event.judgeIds &&
+          event.judgeIds.some((id) => id.toString() === req.user._id.toString())))
+      ) {
+        req.event = event;
+        return next();
+      }
+    } catch (err) {
+      console.error('Error verifying event organizer:', err);
+    }
+  }
+
+  return res.status(403).json({
+    message: 'Access denied. Organizer or administrator privileges required.',
+  });
 }
+
+export const requireOrganizerOrAdmin = requireAdmin;
 
 export function requireJudgeOrAdmin(req, res, next) {
   if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'judge')) {

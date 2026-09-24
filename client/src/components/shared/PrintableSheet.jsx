@@ -57,6 +57,15 @@ export default function PrintableSheet({
   const groupA = CRITERIA.slice(0, 4);
   const groupB = CRITERIA.slice(4, 8);
 
+  // ONLY display teams that have finalized evaluations.
+  // Requirement: Unevaluated teams and drafted marks are NOT to be displayed in the judgment sheet.
+  const evaluatedTeams = teams.filter((team) => {
+    const scoreRecord = judgeScores[team.id] || judgeScores[team._id];
+    if (!scoreRecord) return false;
+    // Strictly require finalized/completed evaluation (drafted marks excluded)
+    return scoreRecord.isCompleted === true;
+  });
+
   return (
     <div className="min-h-screen bg-slate-100 py-6 px-4 font-sans text-slate-900">
       {/* ─────────────────────────────────────────────────────────────
@@ -79,7 +88,7 @@ export default function PrintableSheet({
               </h2>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              All {teams.length} teams formatted for clean A4 Portrait printing. Full criteria names with stacked 4-column sub-rows and zero clipping.
+              Showing {evaluatedTeams.length} evaluated {evaluatedTeams.length === 1 ? 'team' : 'teams'} (unevaluated teams are excluded). Formatted for clean A4 Portrait printing.
             </p>
           </div>
         </div>
@@ -87,7 +96,8 @@ export default function PrintableSheet({
         <div className="flex items-center space-x-3">
           <button
             onClick={handlePrint}
-            className="inline-flex items-center space-x-2 py-2.5 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition active:scale-95"
+            disabled={evaluatedTeams.length === 0}
+            className="inline-flex items-center space-x-2 py-2.5 px-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition active:scale-95"
             title="Click to print or save as A4 portrait PDF"
           >
             <Printer className="w-4 h-4" />
@@ -126,16 +136,27 @@ export default function PrintableSheet({
                 {judge?.panelNumber ? ` (Panel: ${judge.panelNumber})` : ''}
               </p>
               <p className="text-slate-500">Date: {currentDateStr}</p>
-              <p className="text-slate-500 font-medium">Total Teams: {teams.length}</p>
+              <p className="text-slate-700 font-medium">
+                Evaluated Teams: <strong className="text-slate-950">{evaluatedTeams.length}</strong> / {teams.length}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* LIST OF TEAMS — EACH TEAM IN A SELF-CONTAINED NON-SPLITTING BLOCK */}
-        <div className="space-y-3.5 print:space-y-3">
-          {teams.map((team, idx) => {
-            const scoreRecord = judgeScores[team.id] || judgeScores[team._id] || {};
-            const total = getTotal(scoreRecord);
+        {/* LIST OF EVALUATED TEAMS — EACH TEAM IN A SELF-CONTAINED NON-SPLITTING BLOCK */}
+        {evaluatedTeams.length === 0 ? (
+          <div className="py-16 text-center space-y-3 border-2 border-dashed border-slate-200 rounded-2xl">
+            <FileSpreadsheet className="w-10 h-10 text-slate-300 mx-auto" />
+            <h3 className="font-bold text-slate-700 text-sm">No Finalized Evaluated Teams Yet</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Per exhibition rules, only finalized evaluations appear on the judgement sheet. Unevaluated teams and drafted marks are not displayed until fully completed.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3.5 print:space-y-3">
+            {evaluatedTeams.map((team, idx) => {
+              const scoreRecord = judgeScores[team.id] || judgeScores[team._id] || {};
+              const total = getTotal(scoreRecord);
 
             return (
               <div
@@ -269,6 +290,7 @@ export default function PrintableSheet({
             );
           })}
         </div>
+      )}
 
         {/* SINGLE SIGN-OFF BLOCK AT THE END OF THE DOCUMENT */}
         <div className="print-signature-block mt-8 pt-4 border-t-2 border-slate-800 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 text-xs">

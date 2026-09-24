@@ -3,13 +3,10 @@ export function normalizeTeamName(name) {
   return name
     .toLowerCase()
     .trim()
-    .replace(/[\s\-_]+/g, ' ')
-    .replace(/[^\w\s]/g, '');
-}
-
-export function stripAlphanumeric(name) {
-  if (!name || typeof name !== 'string') return '';
-  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    .replace(/[-_]+/g, ' ')
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export function levenshteinDistance(a, b) {
@@ -44,10 +41,8 @@ export function calculateSimilarity(s1, s2) {
   if (str1 === str2) return 1.0;
   if (!str1 || !str2) return 0.0;
 
-  const stripped1 = stripAlphanumeric(str1);
-  const stripped2 = stripAlphanumeric(str2);
-  if (stripped1 === stripped2 && stripped1.length > 0) {
-    return 0.98;
+  if (str1.includes(str2) || str2.includes(str1)) {
+    return 0.95;
   }
 
   const distance = levenshteinDistance(str1, str2);
@@ -64,15 +59,16 @@ export function findPotentialDuplicates(candidateName, existingTeams) {
   }
 
   const normCandidate = normalizeTeamName(candidateName);
-  const strippedCandidate = stripAlphanumeric(candidateName);
+  if (!normCandidate) return [];
 
   const matches = [];
 
-  for (const team of existingTeams) {
-    const teamNorm = team.teamNameNormalized || normalizeTeamName(team.teamName);
-    const teamStripped = stripAlphanumeric(team.teamName);
+  for (const item of existingTeams) {
+    const team = item.team || item;
+    const teamName = team.teamName || team.name || '';
+    const normTeam = team.teamNameNormalized || normalizeTeamName(teamName);
 
-    if (normCandidate === teamNorm || strippedCandidate === teamStripped) {
+    if (normCandidate === normTeam) {
       matches.push({
         team,
         similarity: 1.0,
@@ -81,8 +77,17 @@ export function findPotentialDuplicates(candidateName, existingTeams) {
       continue;
     }
 
-    const similarity = calculateSimilarity(candidateName, team.teamName);
-    if (similarity >= 0.72) {
+    if (normCandidate.includes(normTeam) || normTeam.includes(normCandidate)) {
+      matches.push({
+        team,
+        similarity: 0.95,
+        isExact: false,
+      });
+      continue;
+    }
+
+    const similarity = calculateSimilarity(normCandidate, normTeam);
+    if (similarity >= 0.85) {
       matches.push({
         team,
         similarity,

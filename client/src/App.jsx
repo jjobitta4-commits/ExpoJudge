@@ -1,283 +1,150 @@
-import React, { useState, useEffect } from 'react';
-import Navbar from './components/common/Navbar';
-import JudgeDashboard from './components/judge/JudgeDashboard';
-import ScoringView from './components/judge/ScoringView';
-import PrintableSheet from './components/shared/PrintableSheet';
-import OrganizerView from './components/organizer/OrganizerView';
-import JudgeSwitchModal from './components/judge/JudgeSwitchModal';
-import TeamManagerModal from './components/organizer/TeamManagerModal';
-import EventSettingsModal from './components/organizer/EventSettingsModal';
-import {
-  loadAppData,
-  saveAppData,
-  getCurrentJudge,
-  calculateTotalScore
-} from './utils/storage';
-import { DEMO_TEAMS, INITIAL_EVENT_CONFIG } from './constants/demoData';
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext.jsx';
+import { EventProvider } from './context/EventContext.jsx';
+import ProtectedRoute from './components/common/ProtectedRoute.jsx';
+import Navbar from './components/common/Navbar.jsx';
+
+import LoginPage from './pages/LoginPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx';
+import EventSetupPage from './pages/EventSetupPage.jsx';
+import JudgeDashboardPage from './pages/judge/JudgeDashboardPage.jsx';
+import ScoringPage from './pages/judge/ScoringPage.jsx';
+import AddTeamPage from './pages/judge/AddTeamPage.jsx';
+import JudgingSheetsPage from './pages/judge/JudgingSheetsPage.jsx';
+import { Loader2 } from 'lucide-react';
+
+// Performance: Lazy-load admin and grid routes per section 10
+const GridViewPage = lazy(() => import('./pages/judge/GridViewPage.jsx'));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage.jsx'));
+const AdminJudgesPage = lazy(() => import('./pages/admin/AdminJudgesPage.jsx'));
+
+function PageLoader() {
+  return (
+    <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-slate-500">
+      <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-2" />
+      <p className="text-xs font-semibold animate-pulse">Loading view...</p>
+    </div>
+  );
+}
+
+function MainLayout({ children }) {
+  return (
+    <div className="min-h-dvh flex flex-col bg-slate-50 font-sans text-slate-800">
+      <Navbar />
+      <main className="flex-1 pb-12">{children}</main>
+    </div>
+  );
+}
 
 export default function App() {
-  // Main app data loaded from localStorage
-  const [appData, setAppData] = useState(() => loadAppData());
-
-  // Views: 'dashboard' | 'scoring' | 'organizer' | 'print'
-  const [currentView, setCurrentView] = useState('dashboard');
-  const [scoringTeamIndex, setScoringTeamIndex] = useState(0);
-
-  // Modals
-  const [isJudgeModalOpen, setIsJudgeModalOpen] = useState(false);
-  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-
-  // Save changes to localStorage whenever appData updates
-  useEffect(() => {
-    saveAppData(appData);
-  }, [appData]);
-
-  // Current Judge
-  const currentJudge = getCurrentJudge(appData);
-
-  // If no judge is registered/selected, force open Judge Modal
-  useEffect(() => {
-    if (!currentJudge || !appData.currentJudgeId) {
-      setIsJudgeModalOpen(true);
-    }
-  }, [currentJudge, appData.currentJudgeId]);
-
-  // Scores specific to the active judge
-  const currentJudgeScores =
-    (currentJudge && appData.scores && appData.scores[currentJudge.id]) || {};
-
-  // Count completed evaluations for active judge
-  const completedCount = (appData.teams || []).filter(
-    (team) => currentJudgeScores[team.id]?.isCompleted
-  ).length;
-
-  // --- Handlers for Judge Management ---
-  const handleSelectJudge = (judgeId) => {
-    setAppData((prev) => ({
-      ...prev,
-      currentJudgeId: judgeId,
-    }));
-  };
-
-  const handleCreateJudge = ({ name, panelNumber }) => {
-    const newJudge = {
-      id: `judge_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      name,
-      panelNumber: panelNumber || '',
-      createdAt: Date.now(),
-    };
-
-    setAppData((prev) => ({
-      ...prev,
-      judges: [...(prev.judges || []), newJudge],
-      currentJudgeId: newJudge.id,
-    }));
-
-    return newJudge;
-  };
-
-  // --- Handlers for Team Management ---
-  const handleAddTeam = (teamData) => {
-    const newTeam = {
-      id: `team_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      teamName: teamData.teamName,
-      projectTitle: teamData.projectTitle,
-      identifier: teamData.identifier || '', // Optional! Left blank if not applicable
-      members: teamData.members || '',
-      createdAt: Date.now(),
-    };
-
-    setAppData((prev) => ({
-      ...prev,
-      teams: [...prev.teams, newTeam],
-    }));
-  };
-
-  const handleUpdateTeam = (teamId, updatedData) => {
-    setAppData((prev) => ({
-      ...prev,
-      teams: prev.teams.map((t) =>
-        t.id === teamId ? { ...t, ...updatedData } : t
-      ),
-    }));
-  };
-
-  const handleDeleteTeam = (teamId) => {
-    setAppData((prev) => {
-      const nextTeams = prev.teams.filter((t) => t.id !== teamId);
-      // Remove team scores across all judges
-      const nextScores = { ...prev.scores };
-      Object.keys(nextScores).forEach((jId) => {
-        if (nextScores[jId] && nextScores[jId][teamId]) {
-          const copy = { ...nextScores[jId] };
-          delete copy[teamId];
-          nextScores[jId] = copy;
-        }
-      });
-      return {
-        ...prev,
-        teams: nextTeams,
-        scores: nextScores,
-      };
-    });
-  };
-
-  const handleResetDemoTeams = () => {
-    setAppData((prev) => ({
-      ...prev,
-      teams: DEMO_TEAMS,
-    }));
-  };
-
-  // --- Handlers for Scoring ---
-  const handleSaveScore = (teamId, marks, remarks, isCompleted = true) => {
-    if (!currentJudge) return;
-
-    setAppData((prev) => {
-      const judgeId = currentJudge.id;
-      const prevJudgeScores = prev.scores[judgeId] || {};
-
-      const updatedRecord = {
-        marks,
-        remarks: remarks || '',
-        isCompleted: Boolean(isCompleted),
-        updatedAt: Date.now(),
-      };
-
-      return {
-        ...prev,
-        scores: {
-          ...prev.scores,
-          [judgeId]: {
-            ...prevJudgeScores,
-            [teamId]: updatedRecord,
-          },
-        },
-      };
-    });
-  };
-
-  // Navigation into scoring
-  const handleSelectTeamToScore = (teamIndex) => {
-    setScoringTeamIndex(teamIndex);
-    setCurrentView('scoring');
-  };
-
-  // --- Handlers for Event Config & Backups ---
-  const handleUpdateEventConfig = (newConfig) => {
-    setAppData((prev) => ({
-      ...prev,
-      eventConfig: newConfig,
-    }));
-  };
-
-  const handleImportAppData = (imported) => {
-    setAppData(imported);
-  };
-
-  const handleResetAllData = () => {
-    localStorage.clear();
-    const initial = loadAppData();
-    setAppData(initial);
-  };
-
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
-      {/* Persistent Navbar (hidden on print) */}
-      <Navbar
-        currentJudge={currentJudge}
-        allJudges={appData.judges || []}
-        eventConfig={appData.eventConfig}
-        currentView={currentView}
-        setCurrentView={setCurrentView}
-        onOpenJudgeSwitch={() => setIsJudgeModalOpen(true)}
-        onOpenTeamSetup={() => setIsTeamModalOpen(true)}
-        onOpenSettings={() => setIsSettingsModalOpen(true)}
-        onOpenPrintSheet={() => setCurrentView('print')}
-        completedCount={completedCount}
-        totalTeamsCount={(appData.teams || []).length}
-      />
+    <BrowserRouter>
+      <AuthProvider>
+        <EventProvider>
+          <Routes>
+            {/* Public Auth Routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
-      {/* Main View Router */}
-      <main className="flex-1">
-        {currentView === 'dashboard' && (
-          <JudgeDashboard
-            currentJudge={currentJudge}
-            teams={appData.teams || []}
-            judgeScores={currentJudgeScores}
-            onSelectTeamToScore={handleSelectTeamToScore}
-            onOpenTeamSetup={() => setIsTeamModalOpen(true)}
-            onOpenPrintSheet={() => setCurrentView('print')}
-            appData={appData}
-          />
-        )}
+            {/* Forced Event Setup for Authenticated Users without Active Event */}
+            <Route
+              path="/event-setup"
+              element={
+                <ProtectedRoute requireEvent={false}>
+                  <EventSetupPage />
+                </ProtectedRoute>
+              }
+            />
 
-        {currentView === 'scoring' && appData.teams && appData.teams.length > 0 && (
-          <ScoringView
-            team={appData.teams[scoringTeamIndex] || appData.teams[0]}
-            teamIndex={scoringTeamIndex}
-            totalTeams={appData.teams.length}
-            existingScoreRecord={
-              currentJudgeScores[appData.teams[scoringTeamIndex]?.id]
-            }
-            judge={currentJudge}
-            onSaveScore={handleSaveScore}
-            onNavigateTeam={(newIndex) => setScoringTeamIndex(newIndex)}
-            onBackToDashboard={() => setCurrentView('dashboard')}
-            onOpenPrintSheet={() => setCurrentView('print')}
-          />
-        )}
+            {/* Authenticated Judge Routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute requireEvent={true}>
+                  <MainLayout>
+                    <JudgeDashboardPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
 
-        {currentView === 'print' && (
-          <PrintableSheet
-            judge={currentJudge}
-            teams={appData.teams || []}
-            judgeScores={currentJudgeScores}
-            eventConfig={appData.eventConfig}
-            onClose={() => setCurrentView('dashboard')}
-          />
-        )}
+            <Route
+              path="/scoring/:teamId"
+              element={
+                <ProtectedRoute requireEvent={true}>
+                  <MainLayout>
+                    <ScoringPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
 
-        {currentView === 'organizer' && (
-          <OrganizerView
-            appData={appData}
-            onBackToJudging={() => setCurrentView('dashboard')}
-            onOpenPrintSheet={() => setCurrentView('print')}
-          />
-        )}
-      </main>
+            <Route
+              path="/add-team"
+              element={
+                <ProtectedRoute requireEvent={true}>
+                  <MainLayout>
+                    <AddTeamPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
 
-      {/* Modals */}
-      <JudgeSwitchModal
-        isOpen={isJudgeModalOpen}
-        onClose={() => setIsJudgeModalOpen(false)}
-        allJudges={appData.judges || []}
-        currentJudge={currentJudge}
-        onSelectJudge={handleSelectJudge}
-        onCreateJudge={handleCreateJudge}
-        isMandatory={!currentJudge}
-      />
+            <Route
+              path="/grid"
+              element={
+                <ProtectedRoute requireEvent={true}>
+                  <MainLayout>
+                    <Suspense fallback={<PageLoader />}>
+                      <GridViewPage />
+                    </Suspense>
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
 
-      <TeamManagerModal
-        isOpen={isTeamModalOpen}
-        onClose={() => setIsTeamModalOpen(false)}
-        teams={appData.teams || []}
-        onAddTeam={handleAddTeam}
-        onUpdateTeam={handleUpdateTeam}
-        onDeleteTeam={handleDeleteTeam}
-        onResetDemoTeams={handleResetDemoTeams}
-      />
+            <Route
+              path="/sheets"
+              element={
+                <ProtectedRoute requireEvent={true}>
+                  <JudgingSheetsPage />
+                </ProtectedRoute>
+              }
+            />
 
-      <EventSettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        eventConfig={appData.eventConfig}
-        onUpdateEventConfig={handleUpdateEventConfig}
-        appData={appData}
-        onImportAppData={handleImportAppData}
-        onResetAllData={handleResetAllData}
-      />
-    </div>
+            {/* Organizer & Admin Protected Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireEvent={true} requireOrganizer={true}>
+                  <MainLayout>
+                    <Suspense fallback={<PageLoader />}>
+                      <AdminDashboardPage />
+                    </Suspense>
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/judges"
+              element={
+                <ProtectedRoute requireEvent={true} requireOrganizer={true}>
+                  <MainLayout>
+                    <Suspense fallback={<PageLoader />}>
+                      <AdminJudgesPage />
+                    </Suspense>
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Catch-all redirect */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </EventProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

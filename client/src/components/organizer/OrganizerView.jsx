@@ -17,7 +17,8 @@ import {
   generateAggregatedLeaderboard,
   generateLeaderboardCSV,
   downloadFile,
-  formatDecimal
+  formatDecimal,
+  formatIdentifier,
 } from '../../utils/storage';
 import { CRITERIA, TOTAL_MAX_MARKS } from '../../constants/criteria';
 
@@ -283,9 +284,9 @@ export default function OrganizerView({ appData, onBackToJudging, onOpenPrintShe
 
                       <td className="py-3.5 px-4">
                         {/* Clean display rule: hide cleanly if blank, don't show N/A */}
-                        {item.team.identifier && item.team.identifier.trim() !== '' ? (
+                        {formatIdentifier(item.team.identifier) ? (
                           <span className="font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded font-semibold text-[11px]">
-                            {item.team.identifier}
+                            {formatIdentifier(item.team.identifier)}
                           </span>
                         ) : (
                           <span className="text-slate-300">—</span>

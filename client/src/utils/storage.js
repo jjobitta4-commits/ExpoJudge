@@ -1,4 +1,4 @@
-﻿import { DEMO_TEAMS, INITIAL_EVENT_CONFIG } from '../constants/demoData';
+import { DEMO_TEAMS, INITIAL_EVENT_CONFIG } from '../constants/demoData';
 import { CRITERIA } from '../constants/criteria';
 
 const STORAGE_KEYS = {
@@ -15,6 +15,18 @@ export const formatDecimal = (num) => {
 export const roundScore = (num) => {
   if (num === null || num === undefined || isNaN(num)) return 0;
   return Math.round(Number(num) * 100) / 100;
+};
+
+// Safe identifier string formatter supporting both string and object shapes
+export const formatIdentifier = (identifier) => {
+  if (!identifier) return '';
+  if (typeof identifier === 'object') {
+    if (!identifier.value || !identifier.value.toString().trim()) return '';
+    const typeLabel =
+      identifier.type === 'table' ? 'Table' : identifier.type === 'teamNo' ? 'Team #' : '';
+    return typeLabel ? `${typeLabel} ${identifier.value}` : identifier.value.toString();
+  }
+  return typeof identifier === 'string' ? identifier.trim() : identifier.toString();
 };
 
 // Calculate total score for given marks record
@@ -37,43 +49,16 @@ export const loadAppData = () => {
     if (!raw) {
       const initial = {
         eventConfig: INITIAL_EVENT_CONFIG,
-        judges: [
-          {
-            id: 'judge_demo',
-            name: 'Dr. Evelyn Mercer',
-            panelNumber: 'Panel A - Robotics & Embedded',
-            createdAt: Date.now(),
-          },
-        ],
-        currentJudgeId: 'judge_demo',
-        teams: DEMO_TEAMS,
-        // scores schema: { [judgeId]: { [teamId]: { marks: {}, remarks: '', isCompleted: false, updatedAt: 123 } } }
-        scores: {
-          judge_demo: {
-            team_01: {
-              marks: {
-                innovation: 13.5,
-                problem_relevance: 9,
-                technical_knowledge: 18.5,
-                functionality_model: 19,
-                design_implementation: 9,
-                presentation_communication: 9.5,
-                qa_handling: 8.5,
-                cost_scalability: 4.5,
-              },
-              remarks: 'Outstanding working prototype with impressive computer vision latency. Great answers during Q&A.',
-              isCompleted: true,
-              updatedAt: Date.now() - 3600000,
-            },
-          },
-        },
+        judges: [],
+        currentJudgeId: null,
+        teams: [],
+        scores: {},
       };
       saveAppData(initial);
       return initial;
     }
     const parsed = JSON.parse(raw);
-    // Ensure critical arrays and objects exist
-    if (!parsed.teams || parsed.teams.length === 0) parsed.teams = DEMO_TEAMS;
+    if (!parsed.teams) parsed.teams = [];
     if (!parsed.judges) parsed.judges = [];
     if (!parsed.scores) parsed.scores = {};
     if (!parsed.eventConfig) parsed.eventConfig = INITIAL_EVENT_CONFIG;
@@ -84,7 +69,7 @@ export const loadAppData = () => {
       eventConfig: INITIAL_EVENT_CONFIG,
       judges: [],
       currentJudgeId: null,
-      teams: DEMO_TEAMS,
+      teams: [],
       scores: {},
     };
   }

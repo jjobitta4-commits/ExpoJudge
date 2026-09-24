@@ -1,0 +1,15 @@
+{
+  "name": "expojudge",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix client",
+    "start": "node server/server.js",
+    "seed": "node server/src/utils/seed.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

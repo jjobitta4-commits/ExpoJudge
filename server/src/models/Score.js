@@ -2,6 +2,10 @@ import mongoose from 'mongoose';
 
 const markItemSchema = new mongoose.Schema(
   {
+    criterionId: {
+      type: String,
+      required: true,
+    },
     criterionName: {
       type: String,
       required: true,
@@ -43,7 +47,6 @@ const scoreSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
-      max: 100,
     },
     remarks: {
       type: String,

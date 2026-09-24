@@ -18,7 +18,7 @@ import {
   Info
 } from 'lucide-react';
 import { CRITERIA, TOTAL_MAX_MARKS } from '../../constants/criteria';
-import { formatDecimal, roundScore, calculateTotalScore } from '../../utils/storage';
+import { formatDecimal, roundScore, calculateTotalScore, formatIdentifier } from '../../utils/storage';
 
 const CRITERION_ICONS = {
   Lightbulb,
@@ -37,11 +37,14 @@ export default function ScoringView({
   totalTeams,
   existingScoreRecord,
   judge,
+  criteria: propCriteria,
   onSaveScore,
   onNavigateTeam,
   onBackToDashboard,
   onOpenPrintSheet,
 }) {
+  const activeCriteria = propCriteria && propCriteria.length > 0 ? propCriteria : CRITERIA;
+  const currentMaxMarks = activeCriteria.reduce((sum, c) => sum + (Number(c.maxMarks) || 0), 0);
   // Local state for criterion marks
   const [marks, setMarks] = useState({});
   const [remarks, setRemarks] = useState('');
@@ -67,11 +70,11 @@ export default function ScoringView({
   const runningTotal = calculateTotalScore(marks);
 
   // Count how many criteria have valid numbers filled
-  const filledCriteriaCount = CRITERIA.filter(
+  const filledCriteriaCount = activeCriteria.filter(
     (c) => marks[c.id] !== undefined && marks[c.id] !== '' && !isNaN(marks[c.id])
   ).length;
 
-  const isAllCriteriaFilled = filledCriteriaCount === CRITERIA.length;
+  const isAllCriteriaFilled = filledCriteriaCount === activeCriteria.length;
 
   // Handle direct score change
   const handleScoreChange = (criterionId, rawValue, maxMarks) => {
@@ -143,7 +146,7 @@ export default function ScoringView({
   // Validate all criteria
   const validateForm = () => {
     const errors = {};
-    for (const c of CRITERIA) {
+    for (const c of activeCriteria) {
       const val = marks[c.id];
       if (val === undefined || val === '' || isNaN(val)) {
         errors[c.id] = `Marks required for ${c.name}`;
@@ -218,11 +221,9 @@ export default function ScoringView({
                 Booth #{teamIndex + 1}
               </span>
 
-              {/* CRITICAL REQUIREMENT: Show whichever identifier was provided (team no. or table no.); 
-                  hide the field entirely if blank, don't show "N/A" */}
-              {team.identifier && team.identifier.trim() !== '' && (
+              {formatIdentifier(team.identifier) && (
                 <span className="text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-0.5 rounded-md">
-                  {team.identifier}
+                  {formatIdentifier(team.identifier)}
                 </span>
               )}
 
@@ -270,7 +271,7 @@ export default function ScoringView({
 
       {/* Criteria Scoring Cards */}
       <div className="space-y-4">
-        {CRITERIA.map((criterion, idx) => {
+        {activeCriteria.map((criterion, idx) => {
           const IconComponent = CRITERION_ICONS[criterion.iconName] || Lightbulb;
           const currentVal = marks[criterion.id];
           const hasError = !!validationErrors[criterion.id];
@@ -456,7 +457,10 @@ export default function ScoringView({
       </div>
 
       {/* Floating Bottom Action Bar with Live Subtotal & Running Total */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 py-3.5 px-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      <div
+        className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 py-3.5 px-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+        style={{ paddingBottom: 'calc(0.875rem + env(safe-area-inset-bottom, 0px))' }}
+      >
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
           {/* Running Total & Status */}
           <div className="flex items-center space-x-3 sm:space-x-4">
@@ -465,12 +469,12 @@ export default function ScoringView({
               <span className="text-xl sm:text-2xl font-black text-amber-400 tracking-tight font-mono">
                 {formatDecimal(runningTotal)}
               </span>
-              <span className="text-xs text-slate-400 font-semibold">/ {TOTAL_MAX_MARKS}</span>
+              <span className="text-xs text-slate-400 font-semibold">/ {currentMaxMarks}</span>
             </div>
 
             <div className="hidden sm:block text-xs text-slate-500">
               <p className="font-semibold text-slate-700">
-                {filledCriteriaCount} of {CRITERIA.length} Scored
+                {filledCriteriaCount} of {activeCriteria.length} Scored
               </p>
               <p className="text-[11px] text-slate-400">
                 {isAllCriteriaFilled ? '✓ All criteria filled' : 'Pending some criteria'}

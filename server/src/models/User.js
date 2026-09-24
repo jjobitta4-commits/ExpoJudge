@@ -24,6 +24,16 @@ const userSchema = new mongoose.Schema(
       default: 'judge',
       required: true,
     },
+    panelLabel: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    activeEventId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Event',
+      default: null,
+    },
   },
   {
     timestamps: true,

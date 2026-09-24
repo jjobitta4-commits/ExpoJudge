@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Edit3, X, Users, AlertCircle, RefreshCw, Check } from 'lucide-react';
-import { DEMO_TEAMS } from '../../constants/demoData';
+import { Plus, Trash2, Edit3, X, Users, AlertCircle, Check } from 'lucide-react';
+import { formatIdentifier } from '../../utils/storage';
 
 export default function TeamManagerModal({
   isOpen,
@@ -9,7 +9,6 @@ export default function TeamManagerModal({
   onAddTeam,
   onUpdateTeam,
   onDeleteTeam,
-  onResetDemoTeams,
 }) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingTeamId, setEditingTeamId] = useState(null);
@@ -67,17 +66,17 @@ export default function TeamManagerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fadeIn font-sans text-slate-800">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-slate-900 p-5 text-white flex items-center justify-between border-b border-slate-800">
+        <div className="bg-slate-50 p-5 text-slate-800 flex items-center justify-between border-b border-slate-200">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
+            <div className="p-2.5 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 shadow-xs">
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Manage Teams & Projects</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-base font-bold text-slate-900">Manage Teams &amp; Projects</h2>
+              <p className="text-xs text-slate-500">
                 Setup exhibition teams for evaluation ({teams.length} registered)
               </p>
             </div>
@@ -87,7 +86,7 @@ export default function TeamManagerModal({
               resetForm();
               onClose();
             }}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+            className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition min-w-[36px] min-h-[36px] flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </button>
@@ -111,18 +110,6 @@ export default function TeamManagerModal({
               {editingTeamId ? 'Editing Team Information' : 'Adding New Team to Roster'}
             </span>
           )}
-
-          <button
-            onClick={() => {
-              if (window.confirm('Reset teams to default demo expo projects? This will not erase existing score entries for existing IDs.')) {
-                onResetDemoTeams();
-              }
-            }}
-            className="inline-flex items-center space-x-1.5 py-1.5 px-3 text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium transition"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
-            <span>Load Demo Teams</span>
-          </button>
         </div>
 
         {/* Content Body */}
@@ -219,7 +206,7 @@ export default function TeamManagerModal({
                 <Users className="w-10 h-10 text-slate-300 mx-auto mb-2" />
                 <p className="text-sm font-semibold text-slate-600">No teams registered yet</p>
                 <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                  Click 'Add New Team' above to register projects, or load demo teams to start evaluating immediately.
+                  Click 'Add New Team' above to register project expo teams to begin evaluation.
                 </p>
               </div>
             ) : (
@@ -237,9 +224,9 @@ export default function TeamManagerModal({
                         {team.teamName}
                       </h4>
                       {/* CRUCIAL REQUIREMENT: Hide entirely if blank, don't show N/A */}
-                      {team.identifier && team.identifier.trim() !== '' && (
+                      {formatIdentifier(team.identifier) && (
                         <span className="text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200/80 px-2 py-0.5 rounded-md">
-                          {team.identifier}
+                          {formatIdentifier(team.identifier)}
                         </span>
                       )}
                     </div>
