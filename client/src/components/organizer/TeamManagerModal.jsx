@@ -1,6 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Plus, Trash2, Edit3, X, Users, AlertCircle, RefreshCw, Check } from 'lucide-react';
-import { DEMO_TEAMS } from '../constants/demoData';
+import { DEMO_TEAMS } from '../../constants/demoData';
 
 export default function TeamManagerModal({
   isOpen,

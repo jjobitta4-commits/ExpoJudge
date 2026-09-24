@@ -1,6 +1,6 @@
 import React from 'react';
 import { Printer, ArrowLeft, FileSpreadsheet } from 'lucide-react';
-import { CRITERIA, TOTAL_MAX_MARKS } from '../constants/criteria';
+import { CRITERIA, TOTAL_MAX_MARKS } from '../../constants/criteria';
 
 export default function PrintableSheet({
   judge,

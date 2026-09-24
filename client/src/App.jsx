@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from './components/Navbar';
-import JudgeDashboard from './components/JudgeDashboard';
-import ScoringView from './components/ScoringView';
-import PrintableSheet from './components/PrintableSheet';
-import OrganizerView from './components/OrganizerView';
-import JudgeSwitchModal from './components/JudgeSwitchModal';
-import TeamManagerModal from './components/TeamManagerModal';
-import EventSettingsModal from './components/EventSettingsModal';
+import Navbar from './components/common/Navbar';
+import JudgeDashboard from './components/judge/JudgeDashboard';
+import ScoringView from './components/judge/ScoringView';
+import PrintableSheet from './components/shared/PrintableSheet';
+import OrganizerView from './components/organizer/OrganizerView';
+import JudgeSwitchModal from './components/judge/JudgeSwitchModal';
+import TeamManagerModal from './components/organizer/TeamManagerModal';
+import EventSettingsModal from './components/organizer/EventSettingsModal';
 import {
   loadAppData,
   saveAppData,

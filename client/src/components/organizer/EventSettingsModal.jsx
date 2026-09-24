@@ -1,6 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { X, Settings, Download, Upload, Trash2, Calendar, MapPin, Building2, Check, RefreshCw } from 'lucide-react';
-import { downloadFile } from '../utils/storage';
+import { downloadFile } from '../../utils/storage';
 
 export default function EventSettingsModal({
   isOpen,

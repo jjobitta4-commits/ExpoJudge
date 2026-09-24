@@ -13,8 +13,8 @@ import {
   Edit2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { calculateTotalScore, formatDecimal, generateJudgeScoresCSV, downloadFile } from '../utils/storage';
-import { TOTAL_MAX_MARKS } from '../constants/criteria';
+import { calculateTotalScore, formatDecimal, generateJudgeScoresCSV, downloadFile } from '../../utils/storage';
+import { TOTAL_MAX_MARKS } from '../../constants/criteria';
 
 export default function JudgeDashboard({
   currentJudge,

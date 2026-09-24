@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Trophy,
   Medal,
@@ -18,8 +18,8 @@ import {
   generateLeaderboardCSV,
   downloadFile,
   formatDecimal
-} from '../utils/storage';
-import { CRITERIA, TOTAL_MAX_MARKS } from '../constants/criteria';
+} from '../../utils/storage';
+import { CRITERIA, TOTAL_MAX_MARKS } from '../../constants/criteria';
 
 export default function OrganizerView({ appData, onBackToJudging, onOpenPrintSheet }) {
   const [searchQuery, setSearchQuery] = useState('');

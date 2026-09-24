@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -17,8 +17,8 @@ import {
   Sparkles,
   Info
 } from 'lucide-react';
-import { CRITERIA, TOTAL_MAX_MARKS } from '../constants/criteria';
-import { formatDecimal, roundScore, calculateTotalScore } from '../utils/storage';
+import { CRITERIA, TOTAL_MAX_MARKS } from '../../constants/criteria';
+import { formatDecimal, roundScore, calculateTotalScore } from '../../utils/storage';
 
 const CRITERION_ICONS = {
   Lightbulb,
